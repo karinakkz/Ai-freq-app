@@ -1,0 +1,72 @@
+{
+  "summary": "Backend voice regression tests passed for valid audio uploads and voice-context chat. Frontend Voice-screen regression could not be fully validated because Expo web preview repeatedly disconnected/not-responding during this run.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/voice/transcribe",
+        "issue": "Malformed/empty upload cases return HTTP 500 with detail '400: Audio file is required' because raised HTTPException(400) is caught by broad exception handler and rethrown as 500.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Home -> Voice tab and direct /voice route",
+        "issue": "Could not complete Voice UI flow checks in this iteration because preview repeatedly showed 'The preview environment is not responding' and Metro disconnected events.",
+        "affected_testIDs": [
+          "voice-screen",
+          "voice-replies-toggle-button",
+          "voice-record-button",
+          "voice-suggestion-0"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Expo web runtime",
+        "issue": "Frequent Metro disconnect and non-responsive preview interrupted mobile-web interaction testing."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ai_voice_flow_regression.py",
+    "/app/backend/tests/test_voice_fast_chat_regression.py",
+    "/app/test_reports/pytest/pytest_results_iteration10.xml",
+    "/app/test_reports/artifacts/frontend_load_iteration10.jpeg",
+    "/app/test_reports/artifacts/voice_screen_iteration10.jpeg",
+    "/app/test_reports/artifacts/voice_result_card_iteration10.jpeg",
+    "/root/.emergent/automation_output/20260330_134032/console_20260330_134032.log",
+    "/root/.emergent/automation_output/20260330_134154/console_20260330_134154.log",
+    "/root/.emergent/automation_output/20260330_134355/console_20260330_134355.log",
+    "/root/.emergent/automation_output/20260330_134542/console_20260330_134542.log"
+  ],
+  "action_items": [
+    "Backend: preserve original HTTPException status codes in /api/voice/transcribe (do not wrap known 4xx into 500).",
+    "Frontend: fallback currently retries /api/voice/process only on 422; consider extending retry to selected 4xx/5xx upload failures that are recoverable.",
+    "Infra/app runtime: investigate Expo tunnel/Metro instability causing intermittent non-responsive preview during Voice-screen tests.",
+    "Add stable testID to tab bar items (including Voice) to reduce flaky text-based navigation in automation."
+  ],
+  "critical_code_review_comments": [
+    "VoiceScreen fallback logic is present: it first posts FormData field 'audio' to /api/voice/transcribe and retries with field 'file' to /api/voice/process on 422.",
+    "In backend transcribe_voice, raising HTTPException(400) for missing upload is overridden by generic except and returned as 500, which can bypass frontend 422-only fallback handling.",
+    "Male-voice tuning is heuristic and depends on available OS voices; behavior can vary by device/browser even with current preference logic."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_10.json"
+  ],
+  "success_rate": {
+    "backend": "83% (5/5 targeted pytest checks passed; 1 additional manual malformed-input check found error-status regression)",
+    "frontend": "40% (basic load passed; core Voice interactions blocked by preview instability in this run)"
+  },
+  "seed_data_creation": "Temporary TEST_ reminder tasks were created by regression tests and cleaned up in teardown.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Public preview URL and backend APIs were reachable. Valid-audio voice endpoints and chat fast-path tests passed via pytest. UI automation hit repeated non-responsive/Metro disconnect states when trying to validate Voice tab and /voice route. Mic recording itself could not be reliably simulated in this unstable preview cycle.",
+  "rca_of_issue": "RCA: /api/voice/transcribe wraps all exceptions in a generic catch and rethrows HTTP 500. Repro: POST /api/voice/transcribe with JSON or empty multipart; response status becomes 500 and detail contains original 400 message ('Audio file is required'). Mitigation: add explicit `except HTTPException as e: raise e` before broad exception handling.",
+  "mocked_api": "No mocked APIs used.",
+  "test_credentials": "Read /app/memory/test_credentials.md; file exists but contains no credentials. No auth flows were in scope."
+}

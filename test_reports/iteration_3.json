@@ -1,0 +1,67 @@
+{
+  "summary": "Frontend-only mobile web verification completed for rollback scope: restored original equalizer card + neon ribbon underlay, removed wave-choice controls, and validated Weight Loss playback now-playing state.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Public Expo preview tunnel availability",
+        "issue": "Intermittent preview outages showed 'The preview environment is not responding' during some runs before recovering.",
+        "affected_testIDs": [
+          "alpha-wave-section-card",
+          "frequencies-screen"
+        ]
+      },
+      {
+        "flow": "Home playback trigger",
+        "issue": "Console intermittently logs 'Disconnected from Metro (1006)' after tapping play, though playback and UI state still proceeded.",
+        "affected_testIDs": [
+          "alpha-wave-play-toggle-button"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "ListeningWaveCard ribbon layer",
+        "issue": "Console warning: props.pointerEvents is deprecated; use style.pointerEvents."
+      },
+      {
+        "component": "Animated on web preview",
+        "issue": "useNativeDriver fallback warning appears on Expo web runtime."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/frontend/src/components/ListeningWaveCard.tsx",
+    "/app/frontend/src/screens/HomeScreen.tsx",
+    "/app/frontend/src/screens/FrequenciesScreen.tsx",
+    "/app/frontend/src/utils/BinauralBeats.ts",
+    "/app/test_reports/artifacts/frontend_load_iteration3.jpeg",
+    "/app/test_reports/artifacts/heal_now_playing_iteration3.jpeg"
+  ],
+  "action_items": [
+    "Investigate Expo/ngrok tunnel instability causing intermittent public preview unavailability.",
+    "Review Metro disconnect (1006) log around Home play tap to ensure no hidden playback/session drop on real devices.",
+    "Migrate deprecated pointerEvents prop usage to style.pointerEvents to remove runtime warnings."
+  ],
+  "critical_code_review_comments": [
+    "Most interactive elements in Home/Frequencies test scope have testID coverage for automation-critical paths (good).",
+    "BinauralBeats playback path remains aligned with env-based backend URL and no hardcoded hosts detected in tested files."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_3.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (not requested)",
+    "frontend": "100% for requested feature checks; intermittent tunnel availability observed"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Core requested flows passed on reachable runs: restored Home card with equalizer+neon, wave controls removed on Home/Heal, Weight Loss card enters now-playing, and bottom tab navigation cycle (Home/Voice/Tasks/Settings/Home) worked. Public preview tunnel remained intermittently flaky.",
+  "rca_of_issue": "Intermittent failures were environment-level (Expo tunnel/ngrok readiness), not deterministic selector or app-flow failures. Re-running after tunnel recovery allowed full scenario pass."
+}

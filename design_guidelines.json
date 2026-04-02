@@ -1,0 +1,121 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 5: Jewel & Luxury (Modified for Tech/Wellness)",
+  "colors": {
+    "background": {
+      "default": "#050B14",
+      "card": "#0A111F",
+      "overlay": "rgba(5, 11, 20, 0.8)"
+    },
+    "primary": {
+      "cyan": "#06B6D4",
+      "emerald": "#10B981",
+      "gradient": "linear-gradient(to right, #06B6D4, #10B981)"
+    },
+    "secondary": {
+      "rainbow_landscape": "linear-gradient(to right, #EF4444, #F59E0B, #10B981, #3B82F6, #8B5CF6)"
+    },
+    "text": {
+      "primary": "#F8FAFC",
+      "secondary": "#94A3B8",
+      "muted": "#475569"
+    },
+    "border": "#1E293B"
+  },
+  "typography": {
+    "font_families": {
+      "headings": "Outfit, sans-serif",
+      "body": "Manrope, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scales": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-black",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-bold",
+      "h3": "text-xl font-semibold",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm tracking-wider uppercase"
+    }
+  },
+  "layout_and_spacing": {
+    "spacing_scale": "p-4, p-6, p-8, p-12",
+    "grid_strategy": "MODE B: Control Room Grid for portrait dashboard. Dense, compact. 1 column on mobile.",
+    "border_radius": "rounded-2xl for cards, rounded-full for pills and wave type picker",
+    "mobile_first": true
+  },
+  "surfaces_and_effects": {
+    "cards": "Glassmorphism with heavy backdrop blur (backdrop-blur-xl), bg-white/5, 1px border-white/10, subtle ambient shadow.",
+    "header": "Crystal Glass sticky header, z-50",
+    "player_landscape": "Full-bleed background, absolutely no borders or UI clutter. Rainbow glowing particles."
+  },
+  "motion_and_interactions": {
+    "hover": "Subtle scale up (scale-105) and border glow on frequency cards.",
+    "rotation": "Instant auto-rotate behavior applied to the player component only (detected via window dimensions/orientation API).",
+    "visualizer": "Smooth transition between waveform types (Sine -> Triangle -> Square -> Sawtooth). Color lerping from cyan/emerald to rainbow when orientation changes to landscape."
+  },
+  "components": {
+    "wave_type_picker": {
+      "description": "A small segmented control or Select component placed inside each playable frequency card to choose waveform type.",
+      "ui": "Shadcn Select or custom pills (Sine, Tri, Sqr, Saw) with active state matching the emerald/cyan gradient."
+    },
+    "frequency_cards": {
+      "description": "Dense library playback cards for Weight Loss, Sleep, Beauty, Focus. Includes title, description, play button, and wave type picker.",
+      "layout": "Bento Grid or Stack. Generous internal padding (p-6) inside rounded-2xl containers."
+    },
+    "immersive_visualizer": {
+      "description": "3D audio visualizer built with React Three Fiber. In portrait, it's a constrained hero section or mini-player. In landscape, it goes full screen.",
+      "behavior_portrait": "Renders blue/cyan/emerald green gradient 3D waves.",
+      "behavior_landscape": "Forces full screen overlay, renders rainbow colored 3D waves. UI controls fade out after 3 seconds of inactivity."
+    }
+  },
+  "media_assets": {
+    "image_urls": [
+      {
+        "category": "hero_visualizer_portrait",
+        "url": "https://static.prod-images.emergentagent.com/jobs/72cb620f-edb5-4bde-9fb3-15209ea6aed4/images/9ccaf84a7afd15841f9c24835a176d0a5608817a48f509bda34b2b72786575e3.png",
+        "description": "Dark UI mobile app background, deep midnight blue to emerald green gradient, subtle 3D glowing sine waves"
+      },
+      {
+        "category": "hero_visualizer_landscape",
+        "url": "https://static.prod-images.emergentagent.com/jobs/72cb620f-edb5-4bde-9fb3-15209ea6aed4/images/a59fe7f4f767717ab006a9f730ad9b353ad10f0a9d731aa281c77ca833ba43c9.png",
+        "description": "Landscape mode, 3D glowing sine waves with rainbow colors against deep obsidian black"
+      },
+      {
+        "category": "card_bg",
+        "url": "https://static.prod-images.emergentagent.com/jobs/72cb620f-edb5-4bde-9fb3-15209ea6aed4/images/8a9b14b21366ab9de28d043d36b37606828a9ade737468200c1a6de271c4fa79.png",
+        "description": "Abstract dark textured background for wellness app cards"
+      },
+      {
+        "category": "frequency_library_sleep",
+        "url": "https://images.unsplash.com/photo-1773402187562-76c837e434dd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwzfHxtZWRpdGF0aW9uJTIwc2xlZXAlMjBiZWF1dHklMjB3ZWxsbmVzcyUyMG5hdHVyZXxlbnwwfHx8fDE3NzQ3OTczMzJ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Young woman sleeping on rocks outdoors, representing Sleep frequency"
+      },
+      {
+        "category": "frequency_library_beauty",
+        "url": "https://images.unsplash.com/photo-1649168916833-2b08c7da43ce?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwyfHxtZWRpdGF0aW9uJTIwc2xlZXAlMjBiZWF1dHklMjB3ZWxsbmVzcyUyMG5hdHVyZXxlbnwwfHx8fDE3NzQ3OTczMzJ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "A woman with her eyes closed and flowers in her hair, representing Beauty/Wellness frequency"
+      }
+    ],
+    "icons": {
+      "library": "@phosphor-icons/react",
+      "strategy": "Duotone weight for high-end feel. Use weights like 'light' for a delicate touch."
+    }
+  },
+  "accessibility_and_testing": {
+    "test_ids": {
+      "wave_picker": "data-testid=\"wave-type-picker\"",
+      "play_button": "data-testid=\"frequency-play-btn\"",
+      "visualizer": "data-testid=\"3d-audio-visualizer\""
+    }
+  },
+  "instructions_to_main_agent": [
+    "Install required dependencies: @react-three/fiber @react-three/drei three framer-motion @phosphor-icons/react",
+    "Implement the UI using React, Tailwind CSS, and Framer Motion.",
+    "For the 3D visualizer, use React Three Fiber. Create dynamic geometry that transitions between Sine, Triangle, Square, and Sawtooth based on the selected wave type. Use useFrame to animate the wave loops.",
+    "To detect landscape mode, use a hook that listens to window size. When width > height, switch to full-screen visualizer mode instantly.",
+    "In landscape mode, change the material of the 3D waves to use a rainbow gradient. In portrait mode, use the default cyan/emerald gradient.",
+    "Ensure each frequency card (Sleep, Focus, etc.) has its own wave type picker (Segmented control or Select) to modify the visualization style when played.",
+    "Never use generic placeholder images. Use the provided URLs from the media_assets section.",
+    "Do not use Space Grotesk font. Use Outfit for headings and Manrope for body text.",
+    "Add test IDs to all interactive elements as specified in the testing section."
+  ]
+}
