@@ -29,7 +29,7 @@ import {
   unlockPackLocally,
 } from '../utils/premium';
 import { APP_NAME, COMPANY_NAME, SUPPORT_EMAIL } from '../constants/brand';
-import { useStripePayment } from '../contexts/StripePaymentContext';
+import { usePayment } from '../contexts/PaymentContext';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const COLORS = {
@@ -61,7 +61,7 @@ function resolveReturnUrl() {
 
 export default function PremiumPacksScreen({ cancelled, pack_id, purchase_type, session_id }: PremiumPacksScreenProps) {
   const router = useRouter();
-  const { isNativePaymentAvailable, initiatePayment, checkPaymentStatus } = useStripePayment();
+  const { isAppleIAP, initiatePayment, checkPaymentStatus, restorePurchases: restoreIAPPurchases } = usePayment();
   const [premiumState, setPremiumState] = useState<PremiumState | null>(null);
   const [loading, setLoading] = useState(true);
   const [processingTarget, setProcessingTarget] = useState<PurchaseTarget>(null);
@@ -134,8 +134,8 @@ export default function PremiumPacksScreen({ cancelled, pack_id, purchase_type, 
   const beginPayment = async (targetPackId: PremiumPackId) => {
     setProcessingTarget(targetPackId);
     
-    if (isNativePaymentAvailable) {
-      setStatusText('Opening secure payment...');
+    if (isAppleIAP) {
+      setStatusText('Opening App Store payment...');
     } else {
       setStatusText('Creating secure checkout...');
     }
@@ -145,8 +145,19 @@ export default function PremiumPacksScreen({ cancelled, pack_id, purchase_type, 
       const result = await initiatePayment(targetPackId, returnUrl);
 
       if (result.success) {
-        // For native payments, verify immediately
-        if (isNativePaymentAvailable && result.paymentIntentId) {
+        // For Apple IAP, unlock immediately
+        if (isAppleIAP) {
+          if (result.purchaseType === 'lifetime' || targetPackId === LIFETIME_UNLOCK.id) {
+            await unlockLifetimeLocally();
+            setStatusText('Lifetime unlock complete! All premium packs are yours forever.');
+          } else {
+            await unlockPackLocally(targetPackId);
+            setStatusText('Pack purchased successfully!');
+          }
+          await refreshState();
+          setProcessingTarget(null);
+        } else if (result.paymentIntentId) {
+          // For Stripe native payments, verify
           await verifyPayment(
             result.paymentIntentId, 
             targetPackId, 
@@ -155,7 +166,7 @@ export default function PremiumPacksScreen({ cancelled, pack_id, purchase_type, 
         }
         // For web payments, the page will redirect, so nothing to do here
       } else {
-        if (result.error === 'Payment cancelled') {
+        if (result.error === 'Payment cancelled' || result.error === 'Purchase cancelled') {
           setStatusText('Payment was cancelled — your free core app is still available.');
         } else {
           Alert.alert('Payment error', result.error || 'Could not complete payment.');
@@ -172,25 +183,54 @@ export default function PremiumPacksScreen({ cancelled, pack_id, purchase_type, 
   };
 
   const restorePurchases = async () => {
-    const nextState = await getPremiumState();
-    setPremiumState(nextState);
+    setStatusText('Restoring purchases...');
+    
+    try {
+      // For Apple IAP, restore from App Store
+      if (isAppleIAP) {
+        const restoredPacks = await restoreIAPPurchases();
+        
+        if (restoredPacks.includes('lifetime_unlock')) {
+          await unlockLifetimeLocally();
+          setStatusText('Restored lifetime unlock on this device.');
+          await refreshState();
+          return;
+        }
+        
+        if (restoredPacks.length > 0) {
+          for (const packId of restoredPacks) {
+            await unlockPackLocally(packId);
+          }
+          setStatusText(`Restored ${restoredPacks.length} purchased pack(s) on this device.`);
+          await refreshState();
+          return;
+        }
+      }
+      
+      // Fallback to local state check
+      const nextState = await getPremiumState();
+      setPremiumState(nextState);
 
-    if (nextState.lifetimeUnlocked) {
-      setStatusText('Restored lifetime unlock on this device.');
-      return;
+      if (nextState.lifetimeUnlocked) {
+        setStatusText('Restored lifetime unlock on this device.');
+        return;
+      }
+
+      if (nextState.purchasedPackIds.length > 0) {
+        setStatusText(`Restored ${nextState.purchasedPackIds.length} purchased pack(s) on this device.`);
+        return;
+      }
+
+      if (nextState.isTrialActive) {
+        setStatusText('Your free trial is still active, so premium packs stay open right now.');
+        return;
+      }
+
+      setStatusText('No previous purchases were found on this device yet.');
+    } catch (error) {
+      console.error('Restore error:', error);
+      setStatusText('Could not restore purchases. Please try again.');
     }
-
-    if (nextState.purchasedPackIds.length > 0) {
-      setStatusText(`Restored ${nextState.purchasedPackIds.length} purchased pack(s) on this device.`);
-      return;
-    }
-
-    if (nextState.isTrialActive) {
-      setStatusText('Your free trial is still active, so premium packs stay open right now.');
-      return;
-    }
-
-    setStatusText('No previous purchases were found on this device yet.');
   };
 
   const trialLabel = useMemo(() => {
@@ -367,7 +407,11 @@ export default function PremiumPacksScreen({ cancelled, pack_id, purchase_type, 
         <Text style={styles.footerText}>Basic tones, tasks, Hey Flow, and background audio stay available without buying premium.</Text>
         <Text style={styles.footerBrand} testID="premium-brand-byline">{APP_NAME} by {COMPANY_NAME}</Text>
         <Text style={styles.footerSupport} testID="premium-support-email">Support: {SUPPORT_EMAIL}</Text>
-        <Text style={styles.footerStripeNote}>Payments are handled securely with Stripe.</Text>
+        <Text style={styles.footerStripeNote}>
+          {isAppleIAP 
+            ? 'Payments handled by App Store. Subscriptions auto-renew unless cancelled.' 
+            : 'Payments are handled securely with Stripe.'}
+        </Text>
         <View style={styles.footerLinkRow}>
           <TouchableOpacity onPress={() => router.push('/privacy' as never)} testID="premium-open-privacy-button">
             <Text style={styles.footerLink}>Privacy</Text>

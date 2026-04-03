@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { StripePaymentProvider } from '../src/contexts/StripePaymentContext';
+import { PaymentProvider } from '../src/contexts/PaymentContext';
 
 const COLORS = {
   background: '#050510',
@@ -153,8 +153,8 @@ function TabLayout() {
 
 export default function RootLayout() {
   return (
-    <StripePaymentProvider>
+    <PaymentProvider>
       <TabLayout />
-    </StripePaymentProvider>
+    </PaymentProvider>
   );
 }
