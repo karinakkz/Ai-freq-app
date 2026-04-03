@@ -23,8 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18.x
-          cache: yarn
-          cache-dependency-path: frontend/yarn.lock
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -33,13 +31,20 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: cd frontend && yarn install
+        working-directory: ./frontend
+        run: yarn install
+
+      - name: Configure EAS project
+        working-directory: ./frontend
+        run: |
+          # Initialize EAS if not already done
+          npx eas-cli init --id ai-freqs-app --non-interactive || true
 
       - name: Build app
+        working-directory: ./frontend
         run: |
-          cd frontend
           if [ "${{ github.event.inputs.platform }}" = "all" ]; then
-            eas build --platform all --profile production --non-interactive
+            npx eas-cli build --platform all --profile production --non-interactive --no-wait
           else
-            eas build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive
+            npx eas-cli build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
           fi
