@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 20.x
 
-      - name: Setup Expo
+      - name: Setup Expo and EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
@@ -38,14 +38,32 @@ jobs:
       - name: Configure EAS Project
         working-directory: ./frontend
         run: |
+          # Create the .expo directory
           mkdir -p .expo
+          
+          # Create project.json with correct format (no extra whitespace)
           echo '{"projectId":"a193de51-04a7-48ad-b19e-fcbbcd325945"}' > .expo/project.json
+          
+          # Verify the files
+          echo "=== .expo/project.json ==="
           cat .expo/project.json
+          
+          echo ""
+          echo "=== eas.json ==="
+          cat eas.json
+          
+          echo ""
+          echo "=== Checking app.config.js for projectId ==="
+          grep -A3 "projectId" app.config.js || echo "projectId not found in app.config.js"
+          
+          echo ""
+          echo "=== Expo whoami ==="
+          npx expo whoami
 
       - name: Build app
         working-directory: ./frontend
         env:
           EXPO_PUBLIC_BACKEND_URL: https://ai-freq-app-production.up.railway.app
-          EAS_BUILD_NO_EXPO_GO_WARNING: true
         run: |
+          echo "Starting EAS build for platform: ${{ github.event.inputs.platform }}"
           npx eas-cli build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
