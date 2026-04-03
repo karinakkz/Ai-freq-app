@@ -3,6 +3,7 @@
     "name": "AI Freq's",
     "slug": "freqflow",
     "version": "1.0.0",
+    "owner": "karinakkz",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "freqflow",
@@ -71,6 +72,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "auto"
+      }
     }
   }
 }

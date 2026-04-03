@@ -35,7 +35,15 @@ jobs:
         working-directory: ./frontend
         run: npm install --legacy-peer-deps
 
+      - name: Configure EAS Project
+        working-directory: ./frontend
+        run: |
+          npx eas-cli init --id "ai-freqs" --non-interactive || true
+          npx eas-cli project:init --non-interactive || true
+
       - name: Build app
         working-directory: ./frontend
+        env:
+          EXPO_PUBLIC_BACKEND_URL: https://ai-freq-app-production.up.railway.app
         run: |
           npx eas-cli build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
