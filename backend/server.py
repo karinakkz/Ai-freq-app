@@ -29,9 +29,13 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-# Initialize OpenAI client
-openai_api_key = os.getenv("OPENAI_API_KEY") or os.getenv("EMERGENT_LLM_KEY")
-openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
+# Initialize OpenAI client (optional - will be None if no key)
+openai_api_key = os.getenv("OPENAI_API_KEY") or os.getenv("EMERGENT_LLM_KEY") or ""
+openai_client = None
+if openai_api_key:
+    openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
+else:
+    logging.warning("OPENAI_API_KEY not set - AI features will be disabled")
 
 # Initialize Stripe
 stripe_api_key = os.getenv("STRIPE_API_KEY", "sk_test_emergent")
