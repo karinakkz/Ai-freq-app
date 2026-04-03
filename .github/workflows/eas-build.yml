@@ -35,15 +35,15 @@ jobs:
         working-directory: ./frontend
         run: npm install --legacy-peer-deps
 
-      - name: Configure EAS Project
+      - name: Link EAS Project
         working-directory: ./frontend
         run: |
-          npx eas-cli init --id "ai-freqs" --non-interactive || true
-          npx eas-cli project:init --non-interactive || true
-
+          # Create project on Expo and link it
+          npx eas-cli@latest project:link --non-interactive || npx eas-cli@latest init --non-interactive || true
+          
       - name: Build app
         working-directory: ./frontend
         env:
           EXPO_PUBLIC_BACKEND_URL: https://ai-freq-app-production.up.railway.app
         run: |
-          npx eas-cli build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
+          npx eas-cli@latest build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
