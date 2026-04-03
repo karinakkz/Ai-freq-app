@@ -1,0 +1,45 @@
+name: EAS Build
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - ios
+          - android
+          - all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: cd frontend && yarn install
+
+      - name: Build app
+        run: |
+          cd frontend
+          if [ "${{ github.event.inputs.platform }}" = "all" ]; then
+            eas build --platform all --profile production --non-interactive
+          else
+            eas build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive
+          fi
