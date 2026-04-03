@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -35,23 +35,17 @@ jobs:
         working-directory: ./frontend
         run: npm install --legacy-peer-deps
 
-      - name: Configure EAS
+      - name: Configure EAS Project
         working-directory: ./frontend
         run: |
-          # Create .expo directory if it doesn't exist
           mkdir -p .expo
-          
-          # Write the project config
-          echo '{"projectId": "a193de51-04a7-48ad-b19e-fcbbcd325945"}' > .expo/project.json
-          
-          # Verify the config
+          echo '{"projectId":"a193de51-04a7-48ad-b19e-fcbbcd325945"}' > .expo/project.json
           cat .expo/project.json
-          cat app.json | grep -A5 "extra"
-          
+
       - name: Build app
         working-directory: ./frontend
         env:
           EXPO_PUBLIC_BACKEND_URL: https://ai-freq-app-production.up.railway.app
           EAS_BUILD_NO_EXPO_GO_WARNING: true
         run: |
-          npx eas-cli@latest build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
+          npx eas-cli build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
