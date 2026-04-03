@@ -5,7 +5,7 @@ on:
       platform:
         description: 'Platform to build'
         required: true
-        default: 'all'
+        default: 'ios'
         type: choice
         options:
           - ios
@@ -32,19 +32,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: yarn install
-
-      - name: Configure EAS project
-        working-directory: ./frontend
-        run: |
-          # Initialize EAS if not already done
-          npx eas-cli init --id ai-freqs-app --non-interactive || true
+        run: npm install --legacy-peer-deps
 
       - name: Build app
         working-directory: ./frontend
         run: |
-          if [ "${{ github.event.inputs.platform }}" = "all" ]; then
-            npx eas-cli build --platform all --profile production --non-interactive --no-wait
-          else
-            npx eas-cli build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
-          fi
+          npx eas-cli build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
