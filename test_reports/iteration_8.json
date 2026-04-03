@@ -55,7 +55,7 @@
   "seed_data_creation": "No seed data created.",
   "retest_needed": false,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "Validated on public preview https://freq-flow-test.preview.emergentagent.com using mobile viewport 375x667. Home branding and support card matched Flow Freak AI + OrganicStylz. Premium showed softer copy, Restore Purchases, Buy Now wording, and Trial Open badge. Settings legal chips opened Privacy/Terms/Contact successfully.",
+  "context_for_next_testing_agent": "Validated on public preview https://ai-freq-preview.preview.emergentagent.com using mobile viewport 375x667. Home branding and support card matched Flow Freak AI + OrganicStylz. Premium showed softer copy, Restore Purchases, Buy Now wording, and Trial Open badge. Settings legal chips opened Privacy/Terms/Contact successfully.",
   "rca_of_issue": "Reproduction: Open Settings tab and scroll to About section. Heading text displays 'About FreqFlow' (legacy hardcoded string in /app/frontend/src/screens/SettingsScreen.tsx), while other screens use brand constants and new naming. Mitigation: replace hardcoded legacy strings with APP_NAME/tagline constants.",
   "mocked_api": "No mocked APIs used.",
   "test_credentials": "Not applicable for this frontend-only, non-auth scope."

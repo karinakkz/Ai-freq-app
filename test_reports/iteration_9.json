@@ -40,7 +40,7 @@
   "seed_data_creation": "Created temporary TEST_ reminder tasks via /api/chat during regression tests; cleaned up by test teardown.",
   "retest_needed": false,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "Validated against public preview https://freq-flow-test.preview.emergentagent.com in mobile viewport (375x667). Confirmed: voice-context reminder creation remains fast; /api/voice/transcribe + /api/voice/process still return ai_response; Voice tab suggestion taps render ai response text, status badge, and task-created badge where applicable.",
+  "context_for_next_testing_agent": "Validated against public preview https://ai-freq-preview.preview.emergentagent.com in mobile viewport (375x667). Confirmed: voice-context reminder creation remains fast; /api/voice/transcribe + /api/voice/process still return ai_response; Voice tab suggestion taps render ai response text, status badge, and task-created badge where applicable.",
   "rca_of_issue": "No blocking regressions found for requested scope.",
   "mocked_api": "No mocked APIs used.",
   "test_credentials": "Read /app/memory/test_credentials.md; file is present but empty. No auth flows were in scope."

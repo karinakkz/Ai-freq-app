@@ -53,7 +53,7 @@
   "retest_needed": true,
   "should_main_agent_self_test": false,
   "context_for_next_testing_agent": "Backend checkout session + status endpoints are working on public base URL, including expected open/unpaid initial status. Frontend test attempts failed twice due 502 preview outage; supervisor shows expo BACKOFF with Stripe plugin merchantIdentifier error in expo.err logs.",
-  "rca_of_issue": "Reproduction: open https://freq-flow-test.preview.emergentagent.com -> 502 preview not responding, and Playwright times out waiting for home testID. Supervisor status reports expo BACKOFF. expo.err repeatedly logs TypeError in @stripe/stripe-react-native config plugin: reading merchantIdentifier. Mitigation: correct Stripe plugin configuration (or remove plugin if not needed for web checkout-session approach) so Expo can boot and premium UI can be retested.",
+  "rca_of_issue": "Reproduction: open https://ai-freq-preview.preview.emergentagent.com -> 502 preview not responding, and Playwright times out waiting for home testID. Supervisor status reports expo BACKOFF. expo.err repeatedly logs TypeError in @stripe/stripe-react-native config plugin: reading merchantIdentifier. Mitigation: correct Stripe plugin configuration (or remove plugin if not needed for web checkout-session approach) so Expo can boot and premium UI can be retested.",
   "test_credentials": "No auth flow in this scope. /app/memory/test_credentials.md exists but has no credentials.",
   "mocked_api": "No mocked APIs used."
 }

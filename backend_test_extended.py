@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import uuid
 
 # Backend URL from frontend environment
-BACKEND_URL = "https://freq-flow-test.preview.emergentagent.com/api"
+BACKEND_URL = "https://ai-freq-preview.preview.emergentagent.com/api"
 
 class ExtendedAPITester:
     def __init__(self):

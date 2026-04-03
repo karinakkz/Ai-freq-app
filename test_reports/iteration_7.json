@@ -34,7 +34,7 @@
   "seed_data_creation": "Set localStorage premium keys during UI testing to simulate owned/trial/locked badge states; no backend seed data created.",
   "retest_needed": false,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "Validated on https://freq-flow-test.preview.emergentagent.com with mobile viewport 375x667. Settings legal buttons and Premium footer legal buttons each opened correct legal routes. Premium showed Restore Purchases and Buy Now text; badge states observed as Trial Open (default), Locked (after fast-forward trial), and Owned (after persisted purchased pack state).",
+  "context_for_next_testing_agent": "Validated on https://ai-freq-preview.preview.emergentagent.com with mobile viewport 375x667. Settings legal buttons and Premium footer legal buttons each opened correct legal routes. Premium showed Restore Purchases and Buy Now text; badge states observed as Trial Open (default), Locked (after fast-forward trial), and Owned (after persisted purchased pack state).",
   "rca_of_issue": "",
   "mocked_api": "No mocked APIs used.",
   "test_credentials": "Not applicable for this frontend-only, non-auth scope."
