@@ -35,15 +35,23 @@ jobs:
         working-directory: ./frontend
         run: npm install --legacy-peer-deps
 
-      - name: Link EAS Project
+      - name: Configure EAS
         working-directory: ./frontend
         run: |
-          # Create project on Expo and link it
-          npx eas-cli@latest project:link --non-interactive || npx eas-cli@latest init --non-interactive || true
+          # Create .expo directory if it doesn't exist
+          mkdir -p .expo
+          
+          # Write the project config
+          echo '{"projectId": "a193de51-04a7-48ad-b19e-fcbbcd325945"}' > .expo/project.json
+          
+          # Verify the config
+          cat .expo/project.json
+          cat app.json | grep -A5 "extra"
           
       - name: Build app
         working-directory: ./frontend
         env:
           EXPO_PUBLIC_BACKEND_URL: https://ai-freq-app-production.up.railway.app
+          EAS_BUILD_NO_EXPO_GO_WARNING: true
         run: |
           npx eas-cli@latest build --platform ${{ github.event.inputs.platform }} --profile production --non-interactive --no-wait
