@@ -17,6 +17,7 @@ const COLORS = {
   teal: '#00d4aa',
   emerald: '#2ecc71',
   purple: '#9d4edd',
+  pink: '#ff6b9d',
   text: '#ffffff',
   textSecondary: '#8b949e',
 };
@@ -33,7 +34,7 @@ function getBarColor(index: number, total: number, state: MoodState) {
     if (ratio < 0.25) return '#9d4edd';
     if (ratio < 0.5) return '#c77dff';
     if (ratio < 0.75) return '#e0aaff';
-    return '#f0d6ff';
+    return '#ff6b9d';
   }
   if (state === 'analyzing') {
     // Orange/yellow when analyzing
@@ -43,12 +44,14 @@ function getBarColor(index: number, total: number, state: MoodState) {
     if (ratio < 0.75) return '#ffca3a';
     return '#ffe066';
   }
-  // Default teal/green gradient
+  // Default teal/green gradient + PINK at the end
   const ratio = index / total;
-  if (ratio < 0.25) return '#1547d5';
-  if (ratio < 0.5) return '#1c7ce5';
-  if (ratio < 0.75) return '#10b6d8';
-  return '#19d48c';
+  if (ratio < 0.2) return '#1547d5';
+  if (ratio < 0.4) return '#1c7ce5';
+  if (ratio < 0.55) return '#10b6d8';
+  if (ratio < 0.7) return '#19d48c';
+  if (ratio < 0.85) return '#ff6b9d';
+  return '#ff1493';
 }
 
 function buildRibbonPath(width: number, height: number, offset: number, curve: number) {
@@ -260,7 +263,7 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
       
       if (success) {
         const summary = analysis.analysis_summary || `Detected: ${mood}`;
-        setStatusText(`${freqToPlay.hz} • ${freqToPlay.desc}\n${summary}`);
+        setStatusText(`${freqToPlay.hz} • ${freqToPlay.desc}`);
       } else {
         setStatusText('Could not play frequency • Tap to retry');
         setMoodState('idle');
@@ -305,7 +308,7 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
           colors={
             moodState === 'listening' 
               ? ['#9d4edd00', '#9d4edd28', '#c77dff22', '#9d4edd00']
-              : ['#0b1d4b00', '#00ccff28', '#2ecc7122', '#0b1d4b00']
+              : ['#0b1d4b00', '#00ccff28', '#2ecc7122', '#ff6b9d15', '#0b1d4b00']
           } 
           style={StyleSheet.absoluteFillObject} 
         />
@@ -315,14 +318,16 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
         <Svg height={220} viewBox={`0 0 ${cardWidth} 220`} width={cardWidth}>
           <Defs>
             <SvgGradient id="ribbonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor={moodState === 'listening' ? '#9d4edd' : '#16d17f'} stopOpacity="0.12" />
-              <Stop offset="50%" stopColor={moodState === 'listening' ? '#c77dff' : '#63ecff'} stopOpacity="0.72" />
-              <Stop offset="100%" stopColor={moodState === 'listening' ? '#e0aaff' : '#14d38a'} stopOpacity="0.78" />
+              <Stop offset="0%" stopColor="#16d17f" stopOpacity="0.12" />
+              <Stop offset="40%" stopColor="#63ecff" stopOpacity="0.72" />
+              <Stop offset="70%" stopColor="#14d38a" stopOpacity="0.78" />
+              <Stop offset="100%" stopColor="#ff6b9d" stopOpacity="0.65" />
             </SvgGradient>
             <SvgGradient id="ribbonGlowSoft" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor={moodState === 'listening' ? '#9d4edd' : '#16d17f'} stopOpacity="0.08" />
-              <Stop offset="50%" stopColor={moodState === 'listening' ? '#c77dff' : '#63ecff'} stopOpacity="0.34" />
-              <Stop offset="100%" stopColor={moodState === 'listening' ? '#e0aaff' : '#14d38a'} stopOpacity="0.42" />
+              <Stop offset="0%" stopColor="#16d17f" stopOpacity="0.08" />
+              <Stop offset="40%" stopColor="#63ecff" stopOpacity="0.34" />
+              <Stop offset="70%" stopColor="#14d38a" stopOpacity="0.42" />
+              <Stop offset="100%" stopColor="#ff6b9d" stopOpacity="0.30" />
             </SvgGradient>
           </Defs>
           {ribbonPaths.map((path, index) => (
@@ -383,7 +388,7 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
           <Text style={styles.label}>
             {moodState === 'listening' ? 'Listening...' : 
              moodState === 'analyzing' ? 'Analyzing...' :
-             moodState === 'playing' ? 'Playing for you' : 'Say "Flow"'}
+             moodState === 'playing' ? 'Playing for you' : 'Say Freq!'}
           </Text>
           <Text style={styles.subLabel} numberOfLines={2}>{statusText}</Text>
         </View>

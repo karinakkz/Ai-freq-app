@@ -7,13 +7,14 @@ import {
   ScrollView,
   ActivityIndicator,
   Animated,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
-import { PulseWaveCard } from '../components/PulseWaveCard';
-import { APP_NAME } from '../constants/brand';
+import { ListeningWaveCard } from '../components/ListeningWaveCard';
+import { APP_NAME, COMPANY_NAME, SUPPORT_EMAIL } from '../constants/brand';
 
 const COLORS = {
   background: '#050510',
@@ -25,7 +26,6 @@ const COLORS = {
   teal: '#00d4aa',
   emerald: '#2ecc71',
   pink: '#ff6b9d',
-  hotPink: '#ff1493',
   purple: '#9d4edd',
   text: '#ffffff',
   textSecondary: '#8b949e',
@@ -35,19 +35,15 @@ const COLORS = {
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-interface PrescribedFrequency {
-  time: string;
-  frequency_id: string;
-  duration: number;
-  reason?: string;
-}
-
 export default function HomeScreen() {
   const router = useRouter();
+  const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [prescribedFrequencies, setPrescribedFrequencies] = useState<PrescribedFrequency[]>([]);
+  const [streakData, setStreakData] = useState({ current_streak: 0, sessions_today: 0 });
+  const [tasks, setTasks] = useState<any[]>([]);
   
-  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const shareGlowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadData();
@@ -57,55 +53,62 @@ export default function HomeScreen() {
   const startAnimations = () => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
+      ])
+    ).start();
+    
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shareGlowAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(shareGlowAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
       ])
     ).start();
   };
 
   const loadData = async () => {
     try {
-      // Could load user's saved frequency prescriptions here
-      setLoading(false);
+      const [streakRes, tasksRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/api/streak/current`).catch(() => ({ data: { current_streak: 0, sessions_today: 0 } })),
+        axios.get(`${BACKEND_URL}/api/tasks?status=active`).catch(() => ({ data: [] })),
+      ]);
+      setStreakData(streakRes.data);
+      setTasks(tasksRes.data.slice(0, 3));
     } catch (error) {
       console.error('Error loading data:', error);
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleFrequencyRecommended = (frequencies: PrescribedFrequency[]) => {
-    setPrescribedFrequencies(frequencies);
+  const handleTogglePlayback = () => {
+    setIsPlaying(!isPlaying);
   };
 
-  const getFrequencyIcon = (freqId: string) => {
-    if (freqId.includes('sleep')) return 'moon';
-    if (freqId.includes('energy')) return 'flash';
-    if (freqId.includes('stress') || freqId.includes('calm')) return 'leaf';
-    if (freqId.includes('focus')) return 'eye';
-    if (freqId.includes('mood') || freqId.includes('depression')) return 'sunny';
-    if (freqId.includes('pain')) return 'medkit';
-    return 'musical-notes';
+  const handleShareStreak = async () => {
+    try {
+      await Share.share({
+        message: `I'm on a ${streakData.current_streak}-day calm streak with ${APP_NAME}! 🧘✨ Join me in finding your perfect frequency.`,
+      });
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
   };
 
-  const getFrequencyColor = (freqId: string) => {
-    if (freqId.includes('sleep')) return '#6c5ce7';
-    if (freqId.includes('energy')) return '#ff9f1c';
-    if (freqId.includes('stress') || freqId.includes('calm')) return COLORS.teal;
-    if (freqId.includes('focus')) return COLORS.cyan;
-    if (freqId.includes('mood')) return '#ffca3a';
-    if (freqId.includes('pain')) return COLORS.pink;
-    return COLORS.emerald;
-  };
-
-  const glowOpacity = pulseAnim.interpolate({
+  const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.3, 0.6],
+    outputRange: [0.3, 0.7],
+  });
+
+  const shareGlowOpacity = shareGlowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.2, 0.5],
   });
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.pink} />
+        <ActivityIndicator size="large" color={COLORS.cyan} />
         <Text style={styles.loadingText}>Initializing Freq...</Text>
       </View>
     );
@@ -121,18 +124,55 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.appTitle}>{APP_NAME}</Text>
-          <Text style={styles.subtitle}>Your AI Wellness Companion</Text>
+          <Text style={styles.subtitle}>{APP_NAME} by {COMPANY_NAME}</Text>
         </View>
-        <Animated.View style={[styles.statusBadge, { opacity: glowOpacity }]}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>Ready</Text>
+        <Animated.View style={[styles.listeningBadge, { opacity: glowOpacity }]}>
+          <View style={styles.listeningDot} />
+          <Text style={styles.listeningText}>Listening</Text>
         </Animated.View>
       </View>
 
-      {/* Main Pulse Wave Card */}
-      <PulseWaveCard onFrequencyRecommended={handleFrequencyRecommended} />
+      {/* Main Wave Card with Mic */}
+      <ListeningWaveCard isPlaying={isPlaying} onTogglePlayback={handleTogglePlayback} />
 
-      {/* Health Check Button */}
+      {/* Always Listening Toggle */}
+      <View style={styles.alwaysListeningCard}>
+        <View style={styles.alwaysListeningIcon}>
+          <Ionicons name="ear" size={20} color={COLORS.purple} />
+        </View>
+        <View style={styles.alwaysListeningText}>
+          <Text style={styles.alwaysListeningTitle}>Always Listening</Text>
+          <Text style={styles.alwaysListeningSub}>Say "Hey Freq" anytime • Stress auto-detect active</Text>
+        </View>
+        <View style={styles.toggleSwitch}>
+          <View style={[styles.toggleDot, { backgroundColor: COLORS.emerald }]} />
+        </View>
+      </View>
+
+      {/* Streak Card */}
+      <View style={styles.streakCard}>
+        <View style={styles.streakIcon}>
+          <Ionicons name="flame" size={24} color={COLORS.cyan} />
+          <Text style={styles.streakCount}>{streakData.current_streak}</Text>
+        </View>
+        <View style={styles.streakInfo}>
+          <Text style={styles.streakTitle}>Day Calm Streak</Text>
+          <Text style={styles.streakSub}>{streakData.sessions_today} calm sessions today</Text>
+        </View>
+      </View>
+
+      {/* Share Streak Button */}
+      <View style={styles.shareButtonWrap}>
+        <Animated.View style={[styles.shareGlowLayer, { opacity: shareGlowOpacity }]} />
+        <TouchableOpacity style={styles.shareButton} onPress={handleShareStreak}>
+          <LinearGradient colors={[COLORS.electricBlue, COLORS.deepBlue]} style={styles.shareButtonGradient}>
+            <Ionicons name="share-social" size={18} color={COLORS.text} />
+            <Text style={styles.shareButtonText}>Share Streak</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
+      {/* Health Check Feature Card */}
       <TouchableOpacity 
         style={styles.healthCheckCard}
         onPress={() => router.push('/health')}
@@ -144,88 +184,59 @@ export default function HomeScreen() {
           style={styles.healthCheckGradient}
         >
           <View style={styles.healthCheckIcon}>
-            <Ionicons name="fitness" size={26} color={COLORS.pink} />
+            <Ionicons name="heart-circle" size={28} color="#ff6b9d" />
           </View>
           <View style={styles.healthCheckContent}>
             <Text style={styles.healthCheckTitle}>Full Health Check</Text>
-            <Text style={styles.healthCheckSub}>BP + Symptoms → Smart Playlist</Text>
+            <Text style={styles.healthCheckSub}>Voice + BP + Symptoms → Smart Playlist</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Prescribed Frequencies */}
-      {prescribedFrequencies.length > 0 && (
-        <View style={styles.prescriptionSection}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="medical" size={18} color={COLORS.pink} />
-            <Text style={styles.sectionTitle}>Your Freq Prescription</Text>
-          </View>
-          
-          {prescribedFrequencies.map((freq, index) => (
-            <View 
-              key={index} 
-              style={[styles.freqCard, { borderLeftColor: getFrequencyColor(freq.frequency_id) }]}
-            >
-              <View style={[styles.freqIcon, { backgroundColor: getFrequencyColor(freq.frequency_id) + '20' }]}>
-                <Ionicons 
-                  name={getFrequencyIcon(freq.frequency_id) as any} 
-                  size={20} 
-                  color={getFrequencyColor(freq.frequency_id)} 
-                />
-              </View>
-              <View style={styles.freqInfo}>
-                <Text style={styles.freqName}>
-                  {freq.frequency_id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </Text>
-                <Text style={styles.freqMeta}>
-                  {freq.time} • {freq.duration} min
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.playMiniButton}>
-                <Ionicons name="play" size={16} color={COLORS.text} />
-              </TouchableOpacity>
-            </View>
-          ))}
+      {/* Support Card */}
+      <View style={styles.supportCard}>
+        <View style={styles.supportIcon}>
+          <Ionicons name="mail" size={18} color={COLORS.cyan} />
         </View>
-      )}
+        <View style={styles.supportInfo}>
+          <Text style={styles.supportTitle}>Support by {COMPANY_NAME}</Text>
+          <Text style={styles.supportEmail}>{SUPPORT_EMAIL}</Text>
+        </View>
+      </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity 
-          style={styles.quickAction}
-          onPress={() => router.push('/frequencies')}
-        >
-          <LinearGradient colors={[COLORS.cyan + '20', COLORS.surface]} style={styles.quickActionGradient}>
-            <Ionicons name="musical-notes" size={24} color={COLORS.cyan} />
-            <Text style={styles.quickActionText}>Browse Frequencies</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.quickAction}
-          onPress={() => router.push('/premium')}
-        >
-          <LinearGradient colors={[COLORS.purple + '20', COLORS.surface]} style={styles.quickActionGradient}>
-            <Ionicons name="diamond" size={24} color={COLORS.purple} />
-            <Text style={styles.quickActionText}>Premium Packs</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+      {/* Recent Tasks */}
+      <View style={styles.tasksSection}>
+        <View style={styles.tasksSectionHeader}>
+          <Text style={styles.tasksSectionTitle}>Recent Tasks</Text>
+          <TouchableOpacity onPress={() => router.push('/tasks')}>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
+        {tasks.length === 0 ? (
+          <View style={styles.noTasksCard}>
+            <Ionicons name="sparkles" size={24} color={COLORS.textMuted} />
+            <Text style={styles.noTasksText}>No tasks yet. Say "Hey Freq" to get started!</Text>
+          </View>
+        ) : (
+          tasks.map((task, index) => (
+            <View key={task.id || index} style={styles.taskItem}>
+              <View style={styles.taskDot} />
+              <Text style={styles.taskText} numberOfLines={1}>{task.title}</Text>
+            </View>
+          ))
+        )}
       </View>
 
       {/* Tips */}
       <View style={styles.tipsContainer}>
         <View style={styles.tipItem}>
-          <Ionicons name="heart" size={16} color={COLORS.pink} />
-          <Text style={styles.tipText}>Place finger on heart button for pulse reading</Text>
+          <Ionicons name="hand-left" size={14} color={COLORS.textMuted} />
+          <Text style={styles.tipText}>Triple-tap header for instant calm</Text>
         </View>
         <View style={styles.tipItem}>
-          <Ionicons name="mic" size={16} color={COLORS.purple} />
-          <Text style={styles.tipText}>Tell Freq how you're feeling after pulse</Text>
-        </View>
-        <View style={styles.tipItem}>
-          <Ionicons name="musical-notes" size={16} color={COLORS.cyan} />
-          <Text style={styles.tipText}>AI prescribes the perfect frequency for you</Text>
+          <Ionicons name="mic" size={14} color={COLORS.textMuted} />
+          <Text style={styles.tipText}>Voice tab for direct recording</Text>
         </View>
       </View>
     </ScrollView>
@@ -268,11 +279,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
   },
-  statusBadge: {
+  listeningBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
@@ -280,29 +291,139 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.pink + '40',
+    borderColor: COLORS.emerald + '40',
     gap: 6,
   },
-  statusDot: {
+  listeningDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.pink,
+    backgroundColor: COLORS.emerald,
   },
-  statusText: {
+  listeningText: {
     fontSize: 12,
-    color: COLORS.pink,
+    color: COLORS.emerald,
     fontWeight: '600',
   },
 
-  // Health Check
+  // Always Listening
+  alwaysListeningCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+    marginTop: 12,
+    backgroundColor: COLORS.surface,
+    padding: 14,
+    borderRadius: 14,
+    gap: 12,
+  },
+  alwaysListeningIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.purple + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alwaysListeningText: {
+    flex: 1,
+  },
+  alwaysListeningTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  alwaysListeningSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  toggleSwitch: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.emerald + '30',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    alignItems: 'flex-end',
+  },
+  toggleDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+
+  // Streak
+  streakCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+    marginTop: 12,
+    backgroundColor: COLORS.surface,
+    padding: 14,
+    borderRadius: 14,
+    gap: 12,
+  },
+  streakIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  streakCount: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.cyan,
+  },
+  streakInfo: {
+    flex: 1,
+  },
+  streakTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  streakSub: {
+    fontSize: 12,
+    color: COLORS.emerald,
+    marginTop: 2,
+  },
+
+  // Share Button
+  shareButtonWrap: {
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  shareGlowLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.electricBlue,
+  },
+  shareButton: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  shareButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
+  },
+  shareButtonText: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // Health Check Card
   healthCheckCard: {
     marginHorizontal: 12,
-    marginTop: 16,
+    marginTop: 12,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.pink + '33',
+    borderColor: '#ff6b9d44',
   },
   healthCheckGradient: {
     flexDirection: 'row',
@@ -314,7 +435,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.pink + '20',
+    backgroundColor: '#ff6b9d22',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -332,104 +453,100 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Prescription Section
-  prescriptionSection: {
+  // Support
+  supportCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 12,
-    marginTop: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  freqCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginTop: 12,
     backgroundColor: COLORS.surface,
     padding: 14,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    gap: 12,
+    borderRadius: 14,
+    gap: 10,
   },
-  freqIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  freqInfo: {
-    flex: 1,
-  },
-  freqName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  freqMeta: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  playMiniButton: {
+  supportIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.pink,
+    backgroundColor: COLORS.cyan + '15',
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Quick Actions
-  quickActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginHorizontal: 12,
-    marginTop: 20,
-  },
-  quickAction: {
+  supportInfo: {
     flex: 1,
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  quickActionGradient: {
-    padding: 16,
+  supportTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  supportEmail: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+
+  // Tasks
+  tasksSection: {
+    marginHorizontal: 12,
+    marginTop: 16,
+  },
+  tasksSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  tasksSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  noTasksCard: {
+    backgroundColor: COLORS.surface,
+    padding: 20,
+    borderRadius: 14,
     alignItems: 'center',
     gap: 8,
   },
-  quickActionText: {
-    color: COLORS.text,
+  noTasksText: {
     fontSize: 13,
-    fontWeight: '600',
+    color: COLORS.textMuted,
+    textAlign: 'center',
   },
-
-  // Tips
-  tipsContainer: {
-    paddingHorizontal: 12,
-    paddingTop: 20,
-    gap: 8,
-  },
-  tipItem: {
+  taskItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
     padding: 12,
     borderRadius: 10,
+    marginBottom: 6,
     gap: 10,
+  },
+  taskDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.cyan,
+  },
+  taskText: {
+    fontSize: 13,
+    color: COLORS.text,
+    flex: 1,
+  },
+
+  // Tips
+  tipsContainer: {
+    paddingHorizontal: 12,
+    paddingTop: 16,
+    gap: 6,
+  },
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   tipText: {
     fontSize: 12,
     color: COLORS.textMuted,
-    flex: 1,
   },
 });
