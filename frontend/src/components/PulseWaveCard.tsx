@@ -52,11 +52,12 @@ function getBarColor(index: number, total: number, state: MoodState) {
     if (ratio < 0.75) return '#ffca3a';
     return '#ffe066';
   }
-  // Default: Cyan to pink gradient
-  if (ratio < 0.2) return '#0044cc';
-  if (ratio < 0.4) return '#00aaff';
-  if (ratio < 0.6) return '#00ccff';
-  if (ratio < 0.8) return '#ff6b9d';
+  // Default: Original teal/green gradient WITH pink at the end
+  if (ratio < 0.2) return '#1547d5';
+  if (ratio < 0.4) return '#1c7ce5';
+  if (ratio < 0.55) return '#10b6d8';
+  if (ratio < 0.7) return '#19d48c';
+  if (ratio < 0.85) return '#ff6b9d';
   return '#ff1493';
 }
 
@@ -304,7 +305,7 @@ export function PulseWaveCard({ onFrequencyRecommended }: PulseWaveCardProps) {
     <View style={[styles.card, { height: cardHeight }]} testID="pulse-wave-card">
       <Animated.View style={[styles.glowLayer, { opacity: glowOpacity }]}>
         <LinearGradient 
-          colors={['#ff149310', '#ff6b9d30', '#00ccff20', '#ff149310']} 
+          colors={['#0b1d4b00', '#00ccff28', '#2ecc7122', '#ff6b9d18', '#0b1d4b00']} 
           style={StyleSheet.absoluteFillObject} 
         />
       </Animated.View>
@@ -313,16 +314,17 @@ export function PulseWaveCard({ onFrequencyRecommended }: PulseWaveCardProps) {
       <View style={styles.ribbonLayer}>
         <Svg height={cardHeight} viewBox={`0 0 ${cardWidth} ${cardHeight}`} width={cardWidth}>
           <Defs>
-            <SvgGradient id="ribbonPink" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#ff1493" stopOpacity="0.15" />
-              <Stop offset="30%" stopColor="#ff6b9d" stopOpacity="0.6" />
-              <Stop offset="60%" stopColor="#00ccff" stopOpacity="0.5" />
-              <Stop offset="100%" stopColor="#ff1493" stopOpacity="0.7" />
+            <SvgGradient id="ribbonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor="#16d17f" stopOpacity="0.12" />
+              <Stop offset="35%" stopColor="#63ecff" stopOpacity="0.72" />
+              <Stop offset="65%" stopColor="#14d38a" stopOpacity="0.78" />
+              <Stop offset="100%" stopColor="#ff6b9d" stopOpacity="0.65" />
             </SvgGradient>
-            <SvgGradient id="ribbonPinkSoft" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#ff1493" stopOpacity="0.08" />
-              <Stop offset="50%" stopColor="#ff6b9d" stopOpacity="0.3" />
-              <Stop offset="100%" stopColor="#00ccff" stopOpacity="0.35" />
+            <SvgGradient id="ribbonGlowSoft" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor="#16d17f" stopOpacity="0.08" />
+              <Stop offset="35%" stopColor="#63ecff" stopOpacity="0.34" />
+              <Stop offset="65%" stopColor="#14d38a" stopOpacity="0.42" />
+              <Stop offset="100%" stopColor="#ff6b9d" stopOpacity="0.35" />
             </SvgGradient>
           </Defs>
           {ribbonPaths.map((path, index) => (
@@ -331,8 +333,8 @@ export function PulseWaveCard({ onFrequencyRecommended }: PulseWaveCardProps) {
               d={path}
               fill="none"
               opacity={0.9 - index * 0.2}
-              stroke="url(#ribbonPinkSoft)"
-              strokeWidth={22 - index * 4}
+              stroke="url(#ribbonGlowSoft)"
+              strokeWidth={18 - index * 3}
             />
           ))}
           {ribbonPaths.map((path, index) => (
@@ -340,9 +342,9 @@ export function PulseWaveCard({ onFrequencyRecommended }: PulseWaveCardProps) {
               key={`sharp-${index}`}
               d={path}
               fill="none"
-              opacity={0.95 - index * 0.15}
-              stroke="url(#ribbonPink)"
-              strokeWidth={5 - index * 0.8}
+              opacity={0.95 - index * 0.18}
+              stroke="url(#ribbonGlow)"
+              strokeWidth={4 - index * 0.6}
             />
           ))}
         </Svg>
@@ -420,7 +422,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#ff6b9d33',
+    borderColor: '#103a9d55',
   },
   glowLayer: { ...StyleSheet.absoluteFillObject },
   ribbonLayer: { ...StyleSheet.absoluteFillObject, top: 10, pointerEvents: 'none' },
