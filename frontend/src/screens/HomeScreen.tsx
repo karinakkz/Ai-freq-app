@@ -372,29 +372,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Mood Analyzer Feature Card */}
-      <TouchableOpacity 
-        style={styles.moodAnalyzerCard}
-        onPress={() => router.push('/mood')}
-        testID="home-mood-analyzer-button"
-      >
-        <LinearGradient
-          colors={['#9d4edd33', COLORS.surface]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.moodAnalyzerGradient}
-        >
-          <View style={styles.moodAnalyzerIcon}>
-            <Ionicons name="pulse" size={24} color="#9d4edd" />
-          </View>
-          <View style={styles.moodAnalyzerContent}>
-            <Text style={styles.moodAnalyzerTitle}>Voice Mood Analyzer</Text>
-            <Text style={styles.moodAnalyzerSub}>Speak to get personalized frequency plan</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
-        </LinearGradient>
-      </TouchableOpacity>
-
       <View style={styles.supportCard} testID="home-support-card">
         <Ionicons name="mail" size={18} color={COLORS.cyan} />
         <View style={styles.supportTextWrap}>
@@ -795,42 +772,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     flex: 1,
-  },
-
-  // Mood Analyzer Card
-  moodAnalyzerCard: {
-    marginHorizontal: 12,
-    marginTop: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#9d4edd44',
-  },
-  moodAnalyzerGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  moodAnalyzerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#9d4edd22',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  moodAnalyzerContent: {
-    flex: 1,
-  },
-  moodAnalyzerTitle: {
-    color: COLORS.text,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  moodAnalyzerSub: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    marginTop: 2,
   },
 });
