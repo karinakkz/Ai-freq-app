@@ -301,6 +301,12 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
 
   return (
     <View style={styles.card} testID="alpha-wave-section-card">
+      {/* Floating Always Listening bar at top */}
+      <View style={styles.floatingBar}>
+        <View style={styles.floatingDot} />
+        <Text style={styles.floatingText}>Always Listening</Text>
+      </View>
+
       <Animated.View style={[styles.glowLayer, { opacity: glowOpacity }]}>
         <LinearGradient 
           colors={
@@ -384,9 +390,11 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
           <Text style={styles.label}>
             {moodState === 'listening' ? 'Listening...' : 
              moodState === 'analyzing' ? 'Analyzing...' :
-             moodState === 'playing' ? 'Playing for you' : 'Say Freq!'}
+             moodState === 'playing' ? 'Playing for you' : 'Say Freq'}
           </Text>
-          <Text style={styles.subLabel} numberOfLines={2}>{statusText}</Text>
+          <Text style={styles.subLabel} numberOfLines={2}>
+            {moodState === 'idle' ? 'Hold button I analyse your mood & health' : statusText}
+          </Text>
         </View>
         <Animated.View style={{ transform: [{ scale: buttonPulse }] }}>
           <TouchableOpacity 
@@ -413,12 +421,38 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 12,
     marginTop: 8,
-    height: 250,
+    height: 320,
     borderRadius: 28,
     overflow: 'hidden',
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: '#103a9d55',
+  },
+  floatingBar: {
+    position: 'absolute',
+    top: 12,
+    left: 14,
+    right: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(13, 17, 23, 0.85)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 6,
+    zIndex: 10,
+  },
+  floatingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.emerald,
+  },
+  floatingText: {
+    fontSize: 11,
+    color: COLORS.emerald,
+    fontWeight: '600',
   },
   glowLayer: { ...StyleSheet.absoluteFillObject },
   ribbonLayer: { ...StyleSheet.absoluteFillObject, top: 14, pointerEvents: 'none' },
@@ -426,8 +460,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 76,
-    height: 110,
+    bottom: 90,
+    height: 150,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'flex-end',

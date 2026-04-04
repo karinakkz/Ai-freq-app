@@ -135,20 +135,6 @@ export default function HomeScreen() {
       {/* Main Wave Card with Mic */}
       <ListeningWaveCard isPlaying={isPlaying} onTogglePlayback={handleTogglePlayback} />
 
-      {/* Always Listening Toggle */}
-      <View style={styles.alwaysListeningCard}>
-        <View style={styles.alwaysListeningIcon}>
-          <Ionicons name="ear" size={20} color={COLORS.purple} />
-        </View>
-        <View style={styles.alwaysListeningText}>
-          <Text style={styles.alwaysListeningTitle}>Always Listening</Text>
-          <Text style={styles.alwaysListeningSub}>Say "Hey Freq" anytime • Stress auto-detect active</Text>
-        </View>
-        <View style={styles.toggleSwitch}>
-          <View style={[styles.toggleDot, { backgroundColor: COLORS.emerald }]} />
-        </View>
-      </View>
-
       {/* Streak Card */}
       <View style={styles.streakCard}>
         <View style={styles.streakIcon}>
@@ -172,7 +158,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Health Check Feature Card */}
+      {/* Health Check Feature Card - Pink */}
       <TouchableOpacity 
         style={styles.healthCheckCard}
         onPress={() => router.push('/health')}
@@ -184,7 +170,7 @@ export default function HomeScreen() {
           style={styles.healthCheckGradient}
         >
           <View style={styles.healthCheckIcon}>
-            <Ionicons name="heart-circle" size={28} color="#ff6b9d" />
+            <Ionicons name="heart-circle" size={28} color={COLORS.pink} />
           </View>
           <View style={styles.healthCheckContent}>
             <Text style={styles.healthCheckTitle}>Full Health Check</Text>
@@ -304,53 +290,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.emerald,
     fontWeight: '600',
-  },
-
-  // Always Listening
-  alwaysListeningCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 12,
-    marginTop: 12,
-    backgroundColor: COLORS.surface,
-    padding: 14,
-    borderRadius: 14,
-    gap: 12,
-  },
-  alwaysListeningIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.purple + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alwaysListeningText: {
-    flex: 1,
-  },
-  alwaysListeningTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  alwaysListeningSub: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  toggleSwitch: {
-    width: 44,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: COLORS.emerald + '30',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    alignItems: 'flex-end',
-  },
-  toggleDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
   },
 
   // Streak
