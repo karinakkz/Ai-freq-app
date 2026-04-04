@@ -34,7 +34,7 @@ function getBarColor(index: number, total: number, state: MoodState) {
     if (ratio < 0.25) return '#9d4edd';
     if (ratio < 0.5) return '#c77dff';
     if (ratio < 0.75) return '#e0aaff';
-    return '#ff6b9d';
+    return '#f0d6ff';
   }
   if (state === 'analyzing') {
     // Orange/yellow when analyzing
@@ -44,14 +44,12 @@ function getBarColor(index: number, total: number, state: MoodState) {
     if (ratio < 0.75) return '#ffca3a';
     return '#ffe066';
   }
-  // Default teal/green gradient + PINK at the end
+  // Default teal/green gradient (original)
   const ratio = index / total;
-  if (ratio < 0.2) return '#1547d5';
-  if (ratio < 0.4) return '#1c7ce5';
-  if (ratio < 0.55) return '#10b6d8';
-  if (ratio < 0.7) return '#19d48c';
-  if (ratio < 0.85) return '#ff6b9d';
-  return '#ff1493';
+  if (ratio < 0.25) return '#1547d5';
+  if (ratio < 0.5) return '#1c7ce5';
+  if (ratio < 0.75) return '#10b6d8';
+  return '#19d48c';
 }
 
 function buildRibbonPath(width: number, height: number, offset: number, curve: number) {
@@ -308,7 +306,7 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
           colors={
             moodState === 'listening' 
               ? ['#9d4edd00', '#9d4edd28', '#c77dff22', '#9d4edd00']
-              : ['#0b1d4b00', '#00ccff28', '#2ecc7122', '#ff6b9d15', '#0b1d4b00']
+              : ['#0b1d4b00', '#00ccff28', '#2ecc7122', '#0b1d4b00']
           } 
           style={StyleSheet.absoluteFillObject} 
         />
@@ -319,15 +317,13 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
           <Defs>
             <SvgGradient id="ribbonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
               <Stop offset="0%" stopColor="#16d17f" stopOpacity="0.12" />
-              <Stop offset="40%" stopColor="#63ecff" stopOpacity="0.72" />
-              <Stop offset="70%" stopColor="#14d38a" stopOpacity="0.78" />
-              <Stop offset="100%" stopColor="#ff6b9d" stopOpacity="0.65" />
+              <Stop offset="50%" stopColor="#63ecff" stopOpacity="0.72" />
+              <Stop offset="100%" stopColor="#14d38a" stopOpacity="0.78" />
             </SvgGradient>
             <SvgGradient id="ribbonGlowSoft" x1="0%" y1="0%" x2="100%" y2="0%">
               <Stop offset="0%" stopColor="#16d17f" stopOpacity="0.08" />
-              <Stop offset="40%" stopColor="#63ecff" stopOpacity="0.34" />
-              <Stop offset="70%" stopColor="#14d38a" stopOpacity="0.42" />
-              <Stop offset="100%" stopColor="#ff6b9d" stopOpacity="0.30" />
+              <Stop offset="50%" stopColor="#63ecff" stopOpacity="0.34" />
+              <Stop offset="100%" stopColor="#14d38a" stopOpacity="0.42" />
             </SvgGradient>
           </Defs>
           {ribbonPaths.map((path, index) => (
