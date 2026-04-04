@@ -184,13 +184,13 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
         audio_data: base64Audio,
       });
 
-      const { mood, stress_level, recommended_frequency, message } = response.data;
+      const analysis = response.data;
+      const mood = analysis.detected_mood || 'neutral';
       
       setDetectedMood(mood);
-      setStatusText(message || `Detected: ${mood} • Playing ${recommended_frequency}`);
       
-      // Play the recommended frequency
-      await playRecommendedFrequency(recommended_frequency, stress_level);
+      // Play the recommended frequency with full analysis context
+      await playRecommendedFrequency(analysis);
       
     } catch (error: any) {
       console.error('Analysis failed:', error);
@@ -199,32 +199,69 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
     }
   };
 
-  const playRecommendedFrequency = async (frequency: string, stressLevel: string) => {
+  const playRecommendedFrequency = async (analysis: any) => {
     setMoodState('playing');
     
     try {
       let success = false;
+      const mood = analysis.detected_mood?.toLowerCase() || 'neutral';
+      const stressLevel = analysis.stress_level || 5;
+      const energyLevel = analysis.energy_level || 5;
+      const immediateFreq = analysis.personalized_plan?.immediate?.frequency_id || 'stress_relief';
       
-      // Map stress/mood to appropriate frequency
-      if (stressLevel === 'high' || frequency.includes('calm') || frequency.includes('theta')) {
-        success = await binauralBeatsPlayer.playTheta();
-        setStatusText('Playing Theta waves (4Hz) • Deep relaxation');
-      } else if (frequency.includes('focus') || frequency.includes('beta')) {
-        success = await binauralBeatsPlayer.playBeta();
-        setStatusText('Playing Beta waves (18Hz) • Enhanced focus');
-      } else if (frequency.includes('alpha') || stressLevel === 'moderate') {
-        success = await binauralBeatsPlayer.playAlpha();
-        setStatusText('Playing Alpha waves (10Hz) • Calm alertness');
-      } else if (frequency.includes('delta') || frequency.includes('sleep')) {
-        success = await binauralBeatsPlayer.playDelta();
-        setStatusText('Playing Delta waves (2Hz) • Deep restoration');
-      } else {
-        // Default to alpha
-        success = await binauralBeatsPlayer.playAlpha();
-        setStatusText('Playing Alpha waves (10Hz) • Balance & calm');
+      // Comprehensive mood-to-frequency mapping
+      const frequencyMap: Record<string, { method: () => Promise<boolean>, hz: string, desc: string }> = {
+        // Delta (2Hz) - Deep healing, sleep, pain
+        'deep_sleep': { method: () => binauralBeatsPlayer.playDelta(), hz: '2Hz Delta', desc: 'Deep restorative sleep' },
+        'pain_relief': { method: () => binauralBeatsPlayer.playDelta(), hz: '2Hz Delta', desc: 'Pain & tension relief' },
+        
+        // Theta (4-6Hz) - Stress, anxiety, meditation
+        'stress_relief': { method: () => binauralBeatsPlayer.playTheta(), hz: '4Hz Theta', desc: 'Deep stress relief' },
+        'anxiety_relief': { method: () => binauralBeatsPlayer.playBeat(200, 8, 'anxiety_relief', 15), hz: '8Hz Alpha-Theta', desc: 'Anxiety calming' },
+        'deep_meditation': { method: () => binauralBeatsPlayer.playTheta(), hz: '6Hz Theta', desc: 'Deep meditation' },
+        'weight_loss': { method: () => binauralBeatsPlayer.playTheta(), hz: '6Hz Theta', desc: 'Metabolic balance' },
+        'depression_lift': { method: () => binauralBeatsPlayer.playBeat(200, 7.83, 'depression_lift', 20), hz: '7.83Hz Schumann', desc: 'Mood elevation' },
+        
+        // Alpha (8-12Hz) - Calm focus, relaxation
+        'focus_enhancer': { method: () => binauralBeatsPlayer.playAlpha(), hz: '10Hz Alpha', desc: 'Calm focus' },
+        'calm_mind': { method: () => binauralBeatsPlayer.playAlpha(), hz: '10Hz Alpha', desc: 'Mental calm' },
+        'clear_skin': { method: () => binauralBeatsPlayer.playBeat(200, 10, 'clear_skin', 15), hz: '10Hz + 528Hz', desc: 'Cellular repair' },
+        'anti_aging': { method: () => binauralBeatsPlayer.playBeat(200, 10, 'anti_aging', 15), hz: '10Hz + 528Hz', desc: 'Rejuvenation' },
+        'immune_boost': { method: () => binauralBeatsPlayer.playBeat(200, 10, 'immune_boost', 15), hz: '10Hz + 528Hz', desc: 'Immune support' },
+        
+        // Beta (14-18Hz) - Energy, confidence, alertness
+        'confidence_boost': { method: () => binauralBeatsPlayer.playBeat(200, 14, 'confidence_boost', 15), hz: '14Hz Beta', desc: 'Confidence & clarity' },
+        'energy_boost': { method: () => binauralBeatsPlayer.playBeta(), hz: '18Hz Beta', desc: 'Energy & vitality' },
+        
+        // Gamma (40Hz) - Peak performance, motivation
+        'motivation_drive': { method: () => binauralBeatsPlayer.playGamma(), hz: '40Hz Gamma', desc: 'Peak motivation' },
+      };
+
+      // Get the frequency to play
+      let freqToPlay = frequencyMap[immediateFreq];
+      
+      // Fallback based on mood if specific frequency not found
+      if (!freqToPlay) {
+        if (mood === 'anxious' || mood === 'stressed' || mood === 'overwhelmed' || stressLevel >= 7) {
+          freqToPlay = frequencyMap['stress_relief'];
+        } else if (mood === 'sad' || mood === 'frustrated') {
+          freqToPlay = frequencyMap['depression_lift'];
+        } else if (mood === 'tired' || energyLevel <= 3) {
+          freqToPlay = frequencyMap['energy_boost'];
+        } else if (mood === 'energetic' || energyLevel >= 8) {
+          freqToPlay = frequencyMap['calm_mind'];
+        } else {
+          freqToPlay = frequencyMap['focus_enhancer'];
+        }
       }
 
-      if (!success) {
+      // Play the frequency
+      success = await freqToPlay.method();
+      
+      if (success) {
+        const summary = analysis.analysis_summary || `Detected: ${mood}`;
+        setStatusText(`${freqToPlay.hz} • ${freqToPlay.desc}\n${summary}`);
+      } else {
         setStatusText('Could not play frequency • Tap to retry');
         setMoodState('idle');
       }
