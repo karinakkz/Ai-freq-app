@@ -3,9 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated, useWindowDimensions
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from 'react-native-svg';
-import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
-import axios from 'axios';
 import { binauralBeatsPlayer } from '../utils/BinauralBeats';
 
 const COLORS = {
@@ -17,24 +14,24 @@ const COLORS = {
   teal: '#00d4aa',
   emerald: '#2ecc71',
   purple: '#9d4edd',
-  pink: '#ff6b9d',
+  pastelPink: '#ffb6c1', // Light pastel pink like flower
+  flowerPink: '#ffc0cb', // Flower pink
   text: '#ffffff',
   textSecondary: '#8b949e',
 };
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const NUM_BARS = 32;
 
-type MoodState = 'idle' | 'listening' | 'analyzing' | 'playing';
+type MoodState = 'idle' | 'reading' | 'analyzing' | 'playing';
 
 function getBarColor(index: number, total: number, state: MoodState) {
-  if (state === 'listening') {
-    // Purple/pink gradient when listening
+  if (state === 'reading') {
+    // Pastel pink when reading pulse
     const ratio = index / total;
-    if (ratio < 0.25) return '#9d4edd';
-    if (ratio < 0.5) return '#c77dff';
-    if (ratio < 0.75) return '#e0aaff';
-    return '#f0d6ff';
+    if (ratio < 0.25) return '#ffb6c1';
+    if (ratio < 0.5) return '#ffc0cb';
+    if (ratio < 0.75) return '#ffd1dc';
+    return '#ffe4e9';
   }
   if (state === 'analyzing') {
     // Orange/yellow when analyzing
@@ -44,7 +41,7 @@ function getBarColor(index: number, total: number, state: MoodState) {
     if (ratio < 0.75) return '#ffca3a';
     return '#ffe066';
   }
-  // Default teal/green gradient (original)
+  // Default teal/green gradient
   const ratio = index / total;
   if (ratio < 0.25) return '#1547d5';
   if (ratio < 0.5) return '#1c7ce5';
@@ -69,17 +66,16 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
   const cardWidth = Math.max(window.width - 24, 280);
   const barAnims = useRef(Array.from({ length: NUM_BARS }, () => new Animated.Value(0))).current;
   const glowPulse = useRef(new Animated.Value(0)).current;
-  const buttonPulse = useRef(new Animated.Value(1)).current;
+  const heartPulse = useRef(new Animated.Value(1)).current;
 
   const [moodState, setMoodState] = useState<MoodState>('idle');
-  const [statusText, setStatusText] = useState('Tap to speak • AI will find your perfect frequency');
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [detectedMood, setDetectedMood] = useState<string | null>(null);
+  const [statusText, setStatusText] = useState('Press to get health frequency prescription');
+  const [bpm, setBpm] = useState<number | null>(null);
 
   useEffect(() => {
     barAnims.forEach((anim, index) => {
       const delay = (index * 90) % 1200;
-      const baseDuration = moodState === 'listening' ? 400 : 1100;
+      const baseDuration = moodState === 'reading' ? 300 : 1100;
       const duration = baseDuration + (index % 5) * 80;
       Animated.loop(
         Animated.sequence([
@@ -96,14 +92,23 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
         Animated.timing(glowPulse, { toValue: 0, duration: 2200, useNativeDriver: true }),
       ])
     ).start();
+  }, [barAnims, glowPulse, moodState]);
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(buttonPulse, { toValue: 1.05, duration: 1400, useNativeDriver: true }),
-        Animated.timing(buttonPulse, { toValue: 1, duration: 1400, useNativeDriver: true }),
-      ])
-    ).start();
-  }, [barAnims, buttonPulse, glowPulse, moodState]);
+  // Heart pulse animation when reading
+  useEffect(() => {
+    if (moodState === 'reading') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(heartPulse, { toValue: 1.15, duration: 150, useNativeDriver: true }),
+          Animated.timing(heartPulse, { toValue: 1, duration: 150, useNativeDriver: true }),
+          Animated.timing(heartPulse, { toValue: 1.1, duration: 100, useNativeDriver: true }),
+          Animated.timing(heartPulse, { toValue: 1, duration: 400, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      heartPulse.setValue(1);
+    }
+  }, [moodState, heartPulse]);
 
   const glowOpacity = glowPulse.interpolate({
     inputRange: [0, 1],
@@ -112,191 +117,100 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
 
   const ribbonPaths = useMemo(
     () => [
-      buildRibbonPath(cardWidth, 220, -0.04, -0.08),
-      buildRibbonPath(cardWidth, 220, 0.03, 0.02),
-      buildRibbonPath(cardWidth, 220, 0.11, 0.08),
+      buildRibbonPath(cardWidth, 280, -0.04, -0.08),
+      buildRibbonPath(cardWidth, 280, 0.03, 0.02),
+      buildRibbonPath(cardWidth, 280, 0.11, 0.08),
     ],
     [cardWidth]
   );
 
   const handleButtonPress = async () => {
     if (moodState === 'idle') {
-      // Start listening
-      await startRecording();
-    } else if (moodState === 'listening') {
-      // Stop listening and analyze
-      await stopRecordingAndAnalyze();
+      startPulseReading();
     } else if (moodState === 'playing' || isPlaying) {
-      // Stop playing
-      await binauralBeatsPlayer.pause();
+      await binauralBeatsPlayer.stop();
       setMoodState('idle');
-      setStatusText('Tap to speak • AI will find your perfect frequency');
-      setDetectedMood(null);
+      setStatusText('Press to get health frequency prescription');
+      setBpm(null);
       onTogglePlayback();
     }
   };
 
-  const startRecording = async () => {
-    try {
-      const permission = await Audio.requestPermissionsAsync();
-      if (!permission.granted) {
-        setStatusText('Microphone permission needed');
-        return;
-      }
+  const startPulseReading = () => {
+    setMoodState('reading');
+    setStatusText('Reading your pulse...');
+    setBpm(null);
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      setRecording(newRecording);
-      setMoodState('listening');
-      setStatusText('Listening... Speak naturally about how you feel');
-    } catch (error) {
-      console.error('Failed to start recording:', error);
-      setStatusText('Could not start recording');
-    }
+    // Simulate pulse reading (3 seconds)
+    setTimeout(() => {
+      const simulatedBpm = Math.floor(Math.random() * 30) + 65; // 65-95 BPM
+      setBpm(simulatedBpm);
+      analyzeAndPlay(simulatedBpm);
+    }, 3000);
   };
 
-  const stopRecordingAndAnalyze = async () => {
-    if (!recording) return;
-
+  const analyzeAndPlay = async (heartRate: number) => {
     setMoodState('analyzing');
-    setStatusText('Analyzing your mood...');
+    setStatusText('Analyzing health data...');
 
-    try {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      setRecording(null);
+    // Brief analysis delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (!uri) {
-        throw new Error('No recording URI');
-      }
-
-      // Read and send to backend
-      const base64Audio = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const response = await axios.post(`${BACKEND_URL}/api/voice/analyze-mood`, {
-        audio_data: base64Audio,
-      });
-
-      const analysis = response.data;
-      const mood = analysis.detected_mood || 'neutral';
-      
-      setDetectedMood(mood);
-      
-      // Play the recommended frequency with full analysis context
-      await playRecommendedFrequency(analysis);
-      
-    } catch (error: any) {
-      console.error('Analysis failed:', error);
-      setStatusText('Analysis failed • Tap to try again');
-      setMoodState('idle');
-    }
-  };
-
-  const playRecommendedFrequency = async (analysis: any) => {
-    setMoodState('playing');
+    // Determine frequency based on heart rate
+    let frequency: { method: () => Promise<boolean>, hz: string, desc: string };
     
-    try {
-      let success = false;
-      const mood = analysis.detected_mood?.toLowerCase() || 'neutral';
-      const stressLevel = analysis.stress_level || 5;
-      const energyLevel = analysis.energy_level || 5;
-      const immediateFreq = analysis.personalized_plan?.immediate?.frequency_id || 'stress_relief';
-      
-      // Comprehensive mood-to-frequency mapping
-      const frequencyMap: Record<string, { method: () => Promise<boolean>, hz: string, desc: string }> = {
-        // Delta (2Hz) - Deep healing, sleep, pain
-        'deep_sleep': { method: () => binauralBeatsPlayer.playDelta(), hz: '2Hz Delta', desc: 'Deep restorative sleep' },
-        'pain_relief': { method: () => binauralBeatsPlayer.playDelta(), hz: '2Hz Delta', desc: 'Pain & tension relief' },
-        
-        // Theta (4-6Hz) - Stress, anxiety, meditation
-        'stress_relief': { method: () => binauralBeatsPlayer.playTheta(), hz: '4Hz Theta', desc: 'Deep stress relief' },
-        'anxiety_relief': { method: () => binauralBeatsPlayer.playBeat(200, 8, 'anxiety_relief', 15), hz: '8Hz Alpha-Theta', desc: 'Anxiety calming' },
-        'deep_meditation': { method: () => binauralBeatsPlayer.playTheta(), hz: '6Hz Theta', desc: 'Deep meditation' },
-        'weight_loss': { method: () => binauralBeatsPlayer.playTheta(), hz: '6Hz Theta', desc: 'Metabolic balance' },
-        'depression_lift': { method: () => binauralBeatsPlayer.playBeat(200, 7.83, 'depression_lift', 20), hz: '7.83Hz Schumann', desc: 'Mood elevation' },
-        
-        // Alpha (8-12Hz) - Calm focus, relaxation
-        'focus_enhancer': { method: () => binauralBeatsPlayer.playAlpha(), hz: '10Hz Alpha', desc: 'Calm focus' },
-        'calm_mind': { method: () => binauralBeatsPlayer.playAlpha(), hz: '10Hz Alpha', desc: 'Mental calm' },
-        'clear_skin': { method: () => binauralBeatsPlayer.playBeat(200, 10, 'clear_skin', 15), hz: '10Hz + 528Hz', desc: 'Cellular repair' },
-        'anti_aging': { method: () => binauralBeatsPlayer.playBeat(200, 10, 'anti_aging', 15), hz: '10Hz + 528Hz', desc: 'Rejuvenation' },
-        'immune_boost': { method: () => binauralBeatsPlayer.playBeat(200, 10, 'immune_boost', 15), hz: '10Hz + 528Hz', desc: 'Immune support' },
-        
-        // Beta (14-18Hz) - Energy, confidence, alertness
-        'confidence_boost': { method: () => binauralBeatsPlayer.playBeat(200, 14, 'confidence_boost', 15), hz: '14Hz Beta', desc: 'Confidence & clarity' },
-        'energy_boost': { method: () => binauralBeatsPlayer.playBeta(), hz: '18Hz Beta', desc: 'Energy & vitality' },
-        
-        // Gamma (40Hz) - Peak performance, motivation
-        'motivation_drive': { method: () => binauralBeatsPlayer.playGamma(), hz: '40Hz Gamma', desc: 'Peak motivation' },
+    if (heartRate > 90) {
+      // High heart rate - needs calming
+      frequency = { 
+        method: () => binauralBeatsPlayer.playTheta(), 
+        hz: '4Hz Theta', 
+        desc: 'Stress Relief & Calm' 
       };
+    } else if (heartRate > 80) {
+      // Slightly elevated - gentle relaxation
+      frequency = { 
+        method: () => binauralBeatsPlayer.playAlpha(), 
+        hz: '10Hz Alpha', 
+        desc: 'Relaxation & Balance' 
+      };
+    } else if (heartRate < 60) {
+      // Low heart rate - needs energy
+      frequency = { 
+        method: () => binauralBeatsPlayer.playBeta(), 
+        hz: '18Hz Beta', 
+        desc: 'Energy & Vitality' 
+      };
+    } else {
+      // Normal range - maintain balance
+      frequency = { 
+        method: () => binauralBeatsPlayer.playAlpha(), 
+        hz: '10Hz Alpha', 
+        desc: 'Balance & Wellness' 
+      };
+    }
 
-      // Get the frequency to play
-      let freqToPlay = frequencyMap[immediateFreq];
-      
-      // Fallback based on mood if specific frequency not found
-      if (!freqToPlay) {
-        if (mood === 'anxious' || mood === 'stressed' || mood === 'overwhelmed' || stressLevel >= 7) {
-          freqToPlay = frequencyMap['stress_relief'];
-        } else if (mood === 'sad' || mood === 'frustrated') {
-          freqToPlay = frequencyMap['depression_lift'];
-        } else if (mood === 'tired' || energyLevel <= 3) {
-          freqToPlay = frequencyMap['energy_boost'];
-        } else if (mood === 'energetic' || energyLevel >= 8) {
-          freqToPlay = frequencyMap['calm_mind'];
-        } else {
-          freqToPlay = frequencyMap['focus_enhancer'];
-        }
-      }
-
-      // Play the frequency
-      success = await freqToPlay.method();
-      
-      if (success) {
-        const summary = analysis.analysis_summary || `Detected: ${mood}`;
-        setStatusText(`${freqToPlay.hz} • ${freqToPlay.desc}`);
-      } else {
-        setStatusText('Could not play frequency • Tap to retry');
-        setMoodState('idle');
-      }
-    } catch (error) {
-      console.error('Playback failed:', error);
-      setStatusText('Playback failed • Tap to retry');
+    setMoodState('playing');
+    const success = await frequency.method();
+    
+    if (success) {
+      setStatusText(`${frequency.hz} • ${frequency.desc}`);
+    } else {
+      setStatusText('Could not play • Tap to retry');
       setMoodState('idle');
     }
   };
 
   const getButtonIcon = () => {
-    switch (moodState) {
-      case 'listening':
-        return 'stop';
-      case 'analyzing':
-        return 'hourglass';
-      case 'playing':
-        return 'pause';
-      default:
-        return isPlaying ? 'pause' : 'mic';
-    }
+    if (moodState === 'playing' || isPlaying) return 'pause';
+    if (moodState === 'analyzing') return 'hourglass';
+    return 'finger-print';
   };
 
   const getButtonColors = (): [string, string] => {
-    switch (moodState) {
-      case 'listening':
-        return [COLORS.purple, '#c77dff'];
-      case 'analyzing':
-        return ['#ff9f1c', '#ffca3a'];
-      case 'playing':
-        return [COLORS.emerald, COLORS.teal];
-      default:
-        return isPlaying ? [COLORS.emerald, COLORS.teal] : [COLORS.cyan, COLORS.electricBlue];
-    }
+    if (moodState === 'reading') return [COLORS.pastelPink, COLORS.flowerPink];
+    if (moodState === 'analyzing') return ['#ff9f1c', '#ffca3a'];
+    if (moodState === 'playing') return [COLORS.emerald, COLORS.teal];
+    return [COLORS.cyan, COLORS.electricBlue];
   };
 
   return (
@@ -310,8 +224,8 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
       <Animated.View style={[styles.glowLayer, { opacity: glowOpacity }]}>
         <LinearGradient 
           colors={
-            moodState === 'listening' 
-              ? ['#9d4edd00', '#9d4edd28', '#c77dff22', '#9d4edd00']
+            moodState === 'reading' 
+              ? ['#ffb6c100', '#ffb6c128', '#ffc0cb22', '#ffb6c100']
               : ['#0b1d4b00', '#00ccff28', '#2ecc7122', '#0b1d4b00']
           } 
           style={StyleSheet.absoluteFillObject} 
@@ -319,7 +233,7 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
       </Animated.View>
 
       <View style={styles.ribbonLayer}>
-        <Svg height={220} viewBox={`0 0 ${cardWidth} 220`} width={cardWidth}>
+        <Svg height={280} viewBox={`0 0 ${cardWidth} 280`} width={cardWidth}>
           <Defs>
             <SvgGradient id="ribbonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
               <Stop offset="0%" stopColor="#16d17f" stopOpacity="0.12" />
@@ -358,7 +272,7 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
       <View style={styles.barsWrap} testID="listening-wave-bars">
         {barAnims.map((anim, index) => {
           const baseHeight = 16 + ((index * 13) % 26);
-          const activeBoost = moodState === 'listening' ? 54 : (isPlaying || moodState === 'playing') ? 44 : 24;
+          const activeBoost = moodState === 'reading' ? 54 : (isPlaying || moodState === 'playing') ? 44 : 24;
           const scaleY = anim.interpolate({
             inputRange: [0, 1],
             outputRange: [1, 1 + activeBoost / (baseHeight + 8)],
@@ -388,23 +302,30 @@ export function ListeningWaveCard({ isPlaying, onTogglePlayback }: ListeningWave
       <View style={styles.footer}>
         <View style={styles.footerText}>
           <Text style={styles.label}>
-            {moodState === 'listening' ? 'Listening...' : 
+            {moodState === 'reading' ? 'Reading Pulse...' : 
              moodState === 'analyzing' ? 'Analyzing...' :
-             moodState === 'playing' ? 'Playing for you' : 'Say Freq'}
+             moodState === 'playing' ? 'Playing for you' : 'Health Frequency'}
           </Text>
-          <Text style={styles.subLabel} numberOfLines={2}>
-            {moodState === 'idle' ? 'Hold button I analyse your mood & health' : statusText}
-          </Text>
+          <Text style={styles.subLabel} numberOfLines={2}>{statusText}</Text>
+          
+          {/* Pulse result in pastel pink */}
+          {bpm && (
+            <View style={styles.bpmBadge}>
+              <Ionicons name="heart" size={12} color={COLORS.pastelPink} />
+              <Text style={styles.bpmText}>{bpm} BPM</Text>
+            </View>
+          )}
         </View>
-        <Animated.View style={{ transform: [{ scale: buttonPulse }] }}>
+        
+        <Animated.View style={{ transform: [{ scale: heartPulse }] }}>
           <TouchableOpacity 
             activeOpacity={0.85} 
             onPress={handleButtonPress} 
             testID="alpha-wave-play-toggle-button"
-            disabled={moodState === 'analyzing'}
+            disabled={moodState === 'analyzing' || moodState === 'reading'}
           >
             <LinearGradient colors={getButtonColors()} style={styles.playButton}>
-              {moodState === 'analyzing' ? (
+              {(moodState === 'analyzing' || moodState === 'reading') ? (
                 <ActivityIndicator color={COLORS.background} size="large" />
               ) : (
                 <Ionicons color={COLORS.background} name={getButtonIcon()} size={34} />
@@ -460,7 +381,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 90,
+    bottom: 100,
     height: 150,
     paddingHorizontal: 12,
     flexDirection: 'row',
@@ -481,7 +402,23 @@ const styles = StyleSheet.create({
   footerText: {
     flex: 1,
   },
-  label: { fontSize: 22, fontWeight: '800', color: COLORS.text },
-  subLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4, maxWidth: 220, lineHeight: 17 },
+  label: { fontSize: 20, fontWeight: '800', color: COLORS.text },
+  subLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4, maxWidth: 200, lineHeight: 17 },
+  bpmBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    backgroundColor: '#ffb6c120',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  bpmText: {
+    color: COLORS.pastelPink,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   playButton: { width: 84, height: 84, borderRadius: 42, justifyContent: 'center', alignItems: 'center' },
 });

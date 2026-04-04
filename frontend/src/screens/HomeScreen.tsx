@@ -158,19 +158,19 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Health Check Feature Card - Pastel Hot Pink */}
+      {/* Health Check Feature Card - Pastel Flower Pink */}
       <TouchableOpacity 
         style={styles.healthCheckCard}
         onPress={() => router.push('/health')}
       >
         <LinearGradient
-          colors={['#ff85a230', COLORS.surface]}
+          colors={['#ffc0cb25', COLORS.surface]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.healthCheckGradient}
         >
-          <View style={[styles.healthCheckIcon, { backgroundColor: '#ff85a225' }]}>
-            <Ionicons name="heart-circle" size={28} color="#ff85a2" />
+          <View style={[styles.healthCheckIcon, { backgroundColor: '#ffc0cb20' }]}>
+            <Ionicons name="heart-circle" size={28} color="#ffb6c1" />
           </View>
           <View style={styles.healthCheckContent}>
             <Text style={styles.healthCheckTitle}>Full Health Check</Text>
@@ -355,14 +355,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Health Check Card - Pastel Hot Pink
+  // Health Check Card - Pastel Flower Pink
   healthCheckCard: {
     marginHorizontal: 12,
     marginTop: 12,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ff85a244',
+    borderColor: '#ffc0cb40',
   },
   healthCheckGradient: {
     flexDirection: 'row',
