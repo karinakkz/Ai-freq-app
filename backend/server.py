@@ -1895,6 +1895,195 @@ async def cleanup_expired_tasks():
     result = await db.tasks.delete_many({"expires_at": {"$lt": datetime.utcnow()}, "saved": False})
     return {"deleted_count": result.deleted_count}
 
+
+# --- HEALTH CHECK PLAYLIST GENERATOR ---
+PLAYLIST_GENERATION_PROMPT = """You are a wellness frequency expert for AI Freq's app.
+
+Based on the user's health data, create a personalized frequency healing playlist.
+
+Available frequencies and their purposes:
+- stress_relief (4Hz Theta): Deep stress relief, anxiety calming
+- bp_balance (7.83Hz Schumann): Blood pressure harmony, cardiovascular health
+- pain_relief (2Hz Delta): Pain relief, headache, tension release
+- mood_lift (7.83Hz Schumann): Depression relief, mood elevation
+- energy_boost (18Hz Beta): Energy, vitality, fatigue relief
+- focus_enhance (14Hz Beta): Mental clarity, concentration
+- sleep_prep (2Hz Delta): Deep relaxation, insomnia, sleep preparation
+- calm_mind (10Hz Alpha): General calm, balance, peace
+- anxiety_relief (8Hz Alpha-Theta): Panic, fear, anxiety calming
+- confidence_boost (14Hz Beta): Self-esteem, confidence
+- immune_boost (10Hz + 528Hz): Immune support, healing
+
+Create a playlist of 3-5 frequencies that address all their concerns.
+Order them logically (e.g., energy first if tired, calming last for sleep issues).
+
+Respond with ONLY valid JSON:
+{
+    "summary": "Brief caring summary of their health state and the session purpose",
+    "playlist": [
+        {
+            "id": "frequency_id",
+            "name": "Display Name",
+            "hz": "Frequency description",
+            "duration": 10,
+            "purpose": "Why this helps them",
+            "color": "#hex color"
+        }
+    ],
+    "total_duration": total minutes,
+    "wellness_tip": "One personalized self-care tip"
+}"""
+
+class HealthPlaylistRequest(BaseModel):
+    mood: Optional[str] = "neutral"
+    stress_level: Optional[int] = 5
+    energy_level: Optional[int] = 5
+    bp_category: Optional[str] = "skip"
+    symptoms: Optional[List[str]] = []
+    sleep_quality: Optional[str] = "okay"
+
+@api_router.post("/health/generate-playlist")
+async def generate_health_playlist(request: HealthPlaylistRequest):
+    """Generate a personalized frequency playlist based on health assessment"""
+    try:
+        # Build health profile description
+        health_profile = f"""
+User Health Assessment:
+- Detected Mood: {request.mood}
+- Stress Level: {request.stress_level}/10
+- Energy Level: {request.energy_level}/10
+- Blood Pressure: {request.bp_category}
+- Symptoms: {', '.join(request.symptoms) if request.symptoms else 'None reported'}
+- Sleep Quality: {request.sleep_quality}
+"""
+        
+        ai_response = await openai_client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0.7,
+            messages=[
+                {"role": "system", "content": PLAYLIST_GENERATION_PROMPT},
+                {"role": "user", "content": health_profile}
+            ]
+        )
+        
+        response_text = ai_response.choices[0].message.content
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
+        
+        if json_match:
+            result = json.loads(json_match.group())
+            return result
+        else:
+            raise ValueError("No JSON in response")
+            
+    except Exception as e:
+        logging.error(f"Playlist generation error: {e}")
+        # Return fallback playlist
+        return generate_fallback_playlist(request)
+
+def generate_fallback_playlist(request: HealthPlaylistRequest):
+    """Generate a fallback playlist if AI fails"""
+    playlist = []
+    symptoms = request.symptoms or []
+    
+    # High stress or anxiety
+    if request.stress_level >= 7 or 'anxiety' in symptoms or 'stress' in symptoms:
+        playlist.append({
+            "id": "stress_relief",
+            "name": "Stress Relief",
+            "hz": "4Hz Theta",
+            "duration": 10,
+            "purpose": "Deep stress relief & calm",
+            "color": "#9d4edd"
+        })
+    
+    # High BP
+    if request.bp_category in ['high', 'elevated']:
+        playlist.append({
+            "id": "bp_balance",
+            "name": "BP Balance",
+            "hz": "7.83Hz Schumann",
+            "duration": 15,
+            "purpose": "Cardiovascular harmony",
+            "color": "#ff6b9d"
+        })
+    
+    # Pain/Headache
+    if 'headache' in symptoms or 'pain' in symptoms:
+        playlist.append({
+            "id": "pain_relief",
+            "name": "Pain Relief",
+            "hz": "2Hz Delta",
+            "duration": 10,
+            "purpose": "Pain & tension release",
+            "color": "#00d4aa"
+        })
+    
+    # Depression
+    if 'depression' in symptoms:
+        playlist.append({
+            "id": "mood_lift",
+            "name": "Mood Elevation",
+            "hz": "7.83Hz Schumann",
+            "duration": 15,
+            "purpose": "Lift spirits & positivity",
+            "color": "#ffca3a"
+        })
+    
+    # Fatigue
+    if 'fatigue' in symptoms or request.energy_level <= 3:
+        playlist.append({
+            "id": "energy_boost",
+            "name": "Energy Boost",
+            "hz": "18Hz Beta",
+            "duration": 10,
+            "purpose": "Natural energy & vitality",
+            "color": "#ff9f1c"
+        })
+    
+    # Focus issues
+    if 'focus' in symptoms:
+        playlist.append({
+            "id": "focus_enhance",
+            "name": "Focus Enhancer",
+            "hz": "14Hz Beta",
+            "duration": 10,
+            "purpose": "Mental clarity & focus",
+            "color": "#00ccff"
+        })
+    
+    # Insomnia
+    if 'insomnia' in symptoms or request.sleep_quality in ['none', 'poor']:
+        playlist.append({
+            "id": "sleep_prep",
+            "name": "Sleep Preparation",
+            "hz": "2Hz Delta",
+            "duration": 15,
+            "purpose": "Deep relaxation for sleep",
+            "color": "#6c5ce7"
+        })
+    
+    # Always end with calm if not already present
+    if not playlist or playlist[-1]['id'] != 'calm_mind':
+        playlist.append({
+            "id": "calm_mind",
+            "name": "Calm Finish",
+            "hz": "10Hz Alpha",
+            "duration": 10,
+            "purpose": "Peaceful balance",
+            "color": "#2ecc71"
+        })
+    
+    total = sum(p['duration'] for p in playlist)
+    
+    return {
+        "summary": "Your personalized wellness session is ready based on your health assessment.",
+        "playlist": playlist,
+        "total_duration": total,
+        "wellness_tip": "Take deep breaths between sessions for maximum benefit."
+    }
+
+
+
 # --- WAV AUDIO GENERATION (Server-Side) ---
 SUPPORTED_WAVE_TYPES = {"sine", "triangle", "square", "sawtooth"}
 

@@ -372,6 +372,29 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Health Check Feature Card */}
+      <TouchableOpacity 
+        style={styles.healthCheckCard}
+        onPress={() => router.push('/health')}
+        testID="home-health-check-button"
+      >
+        <LinearGradient
+          colors={['#ff6b9d22', COLORS.surface]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.healthCheckGradient}
+        >
+          <View style={styles.healthCheckIcon}>
+            <Ionicons name="heart-circle" size={28} color="#ff6b9d" />
+          </View>
+          <View style={styles.healthCheckContent}>
+            <Text style={styles.healthCheckTitle}>Full Health Check</Text>
+            <Text style={styles.healthCheckSub}>Voice + BP + Symptoms → Smart Playlist</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+        </LinearGradient>
+      </TouchableOpacity>
+
       <View style={styles.supportCard} testID="home-support-card">
         <Ionicons name="mail" size={18} color={COLORS.cyan} />
         <View style={styles.supportTextWrap}>
@@ -772,5 +795,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     flex: 1,
+  },
+
+  // Health Check Card
+  healthCheckCard: {
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ff6b9d44',
+  },
+  healthCheckGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  healthCheckIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ff6b9d22',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  healthCheckContent: {
+    flex: 1,
+  },
+  healthCheckTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  healthCheckSub: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
   },
 });
